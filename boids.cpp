@@ -7,10 +7,10 @@
 
 #define R 50
 #define MAXV 5
-#define FH 200
-#define FW 200
-#define SIZE 3
-#define DT 0.5
+#define FH 500
+#define FW 500
+#define SIZE 1.5
+#define DT 0.05
 
 typedef unsigned char byte;
 byte Frame[FH][FW][3];
@@ -18,12 +18,9 @@ byte Frame2[FH][FW][3];
 
 using namespace std;
 
-vector<bird> Boids;
-vector<bird> Boids2;
-
 class bird {
-public:
     int x, y, dx, dy;
+public:
 
     bird() {
         x = rand() % FW;
@@ -32,11 +29,69 @@ public:
         dy = rand() % MAXV;
     }
 
+    int getX() {
+        return this->x;
+    }
+    int getY() {
+        return this->y;
+    }
+    int getDx() {
+        return this->dx;
+    }
+    int getDy() {
+        return this->dy;
+    }
+
+    void setX(int a) {
+        if (a >= 0 && a < FW) {
+            this->x = a;
+        } else if (a >= FW) {
+            this->x = a - FW;
+        } else if (a < 0) {
+            this->x = a + FW;
+        }
+    }
+    void setY(int a) {
+        if (a >= 0 && a < FH) {
+            this->y = a;
+        } else if (a >= FH) {
+            this->y = a - FH;
+        } else if (a < 0) {
+            this->y = a + FH;
+        }
+    }
+    void setDx(int a) {
+        if (a > -MAXV && a < MAXV) {
+            this->dx = a;
+        } else if (a < -MAXV){
+            this->dx = -MAXV;
+        } else if (a > MAXV) {
+            this->dx = MAXV;
+        }
+    }
+    void setDy(int a) {
+        if (a > -MAXV && a < MAXV) {
+            this->dy = a;
+        } else if (a < -MAXV) {
+            this->dy = -MAXV;
+        } else if (a > MAXV) {
+            this->dy = MAXV;
+        }
+    }
+    
     vector<bird> Search(vector<bird> base) {
         vector<bird> res;
         for (int i = 0; i < base.size(); i++) {
-            if (sqrt(pow((this->x - base[i].x), 2) + pow((this->y - base[i].y), 2)) <= R && (base[i].x != this->x || base[i].y != this->y)) {
-                res.push_back(base[i]);
+            for (int h = -1; h < 2; h++) {
+                for (int w = -1; w < 2; w++) {
+                    int x0 = base[i].x + FW * w;
+                    int y0 = base[i].y + FH * h;
+                    int r = sqrt(pow((this->x - x0), 2) + pow((this->y - y0), 2));
+                    if (r <= R && (x0 != this->x || y0 != this->y)) {
+                        res.push_back(base[i]);
+                        break;
+                    }
+                }
             }
         }
         return res;
@@ -69,15 +124,15 @@ public:
         }
 
         for (int i = 0; i < src.size(); i++) {
-            int rx = src[i].x - this->x;
-            int ry = src[i].y - this->y;
+            int rx = src[i].getX() - this->x;
+            int ry = src[i].getY() - this->y;
             double v = sqrt((double)pow(rx, 2) + (double)pow(ry, 2));
             int v1 = v;
             if (v1 == 0) {
                 v1 = 1;
             }
-            int p = 0 - (rx * R) / v1;
-            int q = 0 - (ry * R) / v1;
+            int p = -((rx * R) / v1 - rx);
+            int q = -((ry * R) / v1 - ry);
             sep[0] += p;
             sep[1] += q;
         }
@@ -94,13 +149,13 @@ public:
             return { 0, 0 };
         }
         for (int i = 0; i < searched.size(); i++) {
-            avg_dx += searched[i].dx;
-            avg_dy += searched[i].dy;
+            avg_dx += searched[i].getDx();
+            avg_dy += searched[i].getDy();
         }
         avg_dx /= searched.size();
         avg_dy /= searched.size();
-        ali[0] = avg_dx - this->dx;
-        ali[1] = avg_dy - this->dy;
+        ali[0] = (this->getX() + avg_dx) - (this->getX() + this->getDx());
+        ali[1] = (this->getY() + avg_dy) - (this->getY() + this->getDy());
         return ali;
     }
 
@@ -114,12 +169,15 @@ public:
         a[0] = sep[0] + ali[0] + coh[0];
         a[1] = sep[1] + ali[1] + coh[1];
 
-        this->x = this->x + this->dx;
-        this->y = this->y + this->dy;
-        this->dx = this->dx + a[0];
-        this->dy = this->dy + a[1];
+        this->setX(this->x + this->dx);
+        this->setY(this->y + this->dy);
+        this->setDx(this->dx + a[0]);
+        this->setDy(this->dy + a[1]);
     }
 };
+
+vector<bird> Boids;
+vector<bird> Boids2;
 
 ofstream out("test_boids.txt");
 /*vector<bird> Boids;
@@ -152,15 +210,20 @@ void Noize() {
 }
 
 void NextFrame() {
-    int x, y;
-    for (y = 0; y < FH; y++)
-        for (x = 0; x < FW; x++)
-        {
-            if (rand() % 4 == 0)
-                Frame[y][x][1] = 255;
-            else
-                Frame[y][x][1] = 0;
+    for (int i = 0; i < FW; i++) {
+        for (int j = 0; j < FH; j++) {
+            Frame[i][j][1] = 0;
         }
+    }
+
+    for (int j = 0; j < Boids.size(); j++) {
+        //if (Boids[j].getX() > 0 && Boids[j].getX() < FW && Boids[j].getY() > 0 && Boids[j].getY() < FW) {
+        Frame[Boids[j].getX()][Boids[j].getY()][1] = 255;
+        //}
+        //out << Boids[j].x << " " << Boids[j].y << " " << Boids[j].dx << " " << Boids[j].dy << endl;
+        Boids[j].NewValue(Boids2);
+    }
+    Boids2 = Boids;
 }
 
 void Display() {
@@ -203,6 +266,11 @@ int main(int argc, char* argv[]) {
     glutIdleFunc(Idle);
 
 //    Noize();
+    for (int i = 0; i < 50; i++) {
+        bird abc;
+        Boids.push_back(abc);
+        Boids2.push_back(abc);
+    }
 
     glutMainLoop();
 
