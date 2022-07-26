@@ -5,7 +5,7 @@
 #include <glut.h>
 #include <time.h>
 
-#define R 50
+#define R 30
 #define MAXV 5
 #define FH 500
 #define FW 500
@@ -180,34 +180,6 @@ vector<bird> Boids;
 vector<bird> Boids2;
 
 ofstream out("test_boids.txt");
-/*vector<bird> Boids;
-    vector<bird> Boids2;
-
-    for (int i = 0; i < 10; i++) {
-        bird abc;
-        Boids.push_back(abc);
-        Boids2.push_back(abc);
-    }
-
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < Boids.size(); j++) {
-            out << Boids[j].x << " " << Boids[j].y << " " << Boids[j].dx << " " << Boids[j].dy << endl;
-            Boids[j].NewValue(Boids2);
-        }
-        Boids2 = Boids;
-    }*/
-
-void Noize() {
-    int x, y;
-    for (y = 0; y < FH; y++)
-        for (x = 0; x < FW; x++)
-        {
-            if (rand() % 10 == 0)
-                Frame[y][x][1] = 255;
-            else
-                Frame[y][x][1] = 0;
-        }
-}
 
 void NextFrame() {
     for (int i = 0; i < FW; i++) {
@@ -217,10 +189,7 @@ void NextFrame() {
     }
 
     for (int j = 0; j < Boids.size(); j++) {
-        //if (Boids[j].getX() > 0 && Boids[j].getX() < FW && Boids[j].getY() > 0 && Boids[j].getY() < FW) {
         Frame[Boids[j].getX()][Boids[j].getY()][1] = 255;
-        //}
-        //out << Boids[j].x << " " << Boids[j].y << " " << Boids[j].dx << " " << Boids[j].dy << endl;
         Boids[j].NewValue(Boids2);
     }
     Boids2 = Boids;
@@ -265,7 +234,6 @@ int main(int argc, char* argv[]) {
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);
 
-//    Noize();
     for (int i = 0; i < 50; i++) {
         bird abc;
         Boids.push_back(abc);
